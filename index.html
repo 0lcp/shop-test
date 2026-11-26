@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مخزن المحل</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f6f3;--card:#fff;--tx:#1f1f1c;--mut:#77756d;--ac:#1d6b57;--acx:#fff;--bd:#e2e0d8;--bad:#b3392b}
+@media (prefers-color-scheme:dark){:root{--bg:#17181a;--card:#222426;--tx:#ececea;--mut:#9a9a94;--ac:#46b79a;--acx:#0b1f19;--bd:#34363a;--bad:#e5806f}}
+html{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
+.wrap{max-width:640px;margin:0 auto;padding:14px}
+h1{font-size:20px;margin:6px 0 12px;display:flex;justify-content:space-between;align-items:center}
+h1 small{font-size:12px;color:var(--mut);font-weight:400;display:block}
+input,select,button{font:inherit;color:inherit}
+input,select{width:100%;padding:12px;border:1px solid var(--bd);border-radius:10px;background:var(--card)}
+.search{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:6px 0;background:var(--bg)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;-webkit-overflow-scrolling:touch}
+.chip{flex:none;padding:7px 14px;border-radius:999px;border:1px solid var(--bd);background:var(--card);cursor:pointer;font-size:14px}
+.chip.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin:10px 0}
+.head{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:6px;gap:8px}
+.head .cat{font-weight:400;color:var(--mut);font-size:13px}
+.tot{background:var(--ac);color:var(--acx);border-radius:999px;padding:2px 12px;font-size:14px;white-space:nowrap}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--bd)}
+.row .t{flex:1;min-width:0;overflow-wrap:anywhere}
+.row .t small{color:var(--mut);display:block}
+.pr{background:none;border:1px dashed var(--bd);border-radius:8px;padding:4px 8px;cursor:pointer;font-size:14px;white-space:nowrap}
+.q{min-width:28px;text-align:center;font-weight:700;font-size:18px}
+.q.z{color:var(--bad)}
+.b{width:38px;height:38px;border-radius:10px;border:1px solid var(--bd);background:var(--card);font-size:22px;cursor:pointer}
+.b.p{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.x{background:none;border:0;color:var(--bad);cursor:pointer;padding:4px;font-size:13px}
+.e{background:none;border:0;color:var(--mut);cursor:pointer;padding:4px;font-size:13px}
+.add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.add .full{grid-column:1/-1}
+.go{padding:13px;border:0;border-radius:10px;background:var(--ac);color:var(--acx);font-weight:700;cursor:pointer;width:100%}
+.msg{color:var(--mut);text-align:center;padding:18px;line-height:1.8}
+.sum{color:var(--mut);font-size:14px;margin:4px 2px}
+.out{background:none;border:0;color:var(--mut);font-size:14px;cursor:pointer}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- الصق هنا إعدادات Firebase (من Project settings ← Your apps) -->
+<script>
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDsTFuT6sUw3jO8k79oW7nDslNamwczyqc",
+  authDomain: "shop-test-cd92b.firebaseapp.com",
+  projectId: "shop-test-cd92b",
+  appId: "1:283458808356:web:7f350f5eebd8242f8746b1"
+};
+window.DEV_EMAIL = "cnmvbn5@gmail.com";
+</script>
+
+<div id="login" class="hide">
+  <h1>🛍️ مخزن المحل</h1>
+  <div class="card"><div class="add">
+    <input id="em" class="full" type="email" placeholder="الإيميل" autocomplete="username">
+    <input id="pw" class="full" type="password" placeholder="كلمة السر" autocomplete="current-password">
+    <button class="go full" id="lgb">دخول</button>
+  </div><div class="msg" id="lgm"></div></div>
+</div>
+
+<div id="app" class="hide">
+  <h1><span>🛍️ مخزن المحل<small id="who"></small></span><button class="out" id="outb">خروج</button></h1>
+  <div class="search"><input id="q" type="search" placeholder="ابحث باسم السلعة..." autocomplete="off"></div>
+  <div class="chips" id="chips"></div>
+  <div class="sum" id="sum"></div>
+  <div id="list"><div class="msg">جاري التحميل...</div></div>
+  <div class="card hide" id="addc">
+    <div class="head">➕ إضافة سلعة</div>
+    <div class="add">
+      <input id="nm" class="full" list="nms" placeholder="اسم السلعة (مثلاً iPhone 13 أو AirPods)">
+      <datalist id="nms"></datalist>
+      <select id="cat" class="full"></select>
+      <input id="det" class="full" placeholder="تفاصيل: النوع واللون (مثلاً رجالي - أسود)">
+      <input id="qty" type="number" min="0" value="1" inputmode="numeric" placeholder="العدد">
+      <input id="prc" type="number" min="0" inputmode="numeric" placeholder="سعر البيع">
+      <button class="go full" id="addb">إضافة</button>
+    </div>
+  </div>
+</div>
+
+<div id="setup" class="msg hide">الصفحة ما انربطت بعد. الصق إعدادات Firebase بأول الملف.</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var cfg=window.FIREBASE_CONFIG||{};
+  if(!cfg.apiKey||!cfg.projectId||typeof firebase==='undefined'){$('setup').classList.remove('hide');return;}
+  var CATS=['هواتف','سماعات','شواحن','كڤرات','إكسسوارات','أخرى'];
+  firebase.initializeApp(cfg);
+  var auth=firebase.auth(),col=firebase.firestore().collection('products');
+  var items=[],unsub=null,isDev=false,curCat='';
+
+  function norm(s){return String(s||'').trim().toLowerCase();}
+  function money(n){return n?Number(n).toLocaleString('en-US')+' د.ع':'بدون سعر';}
+  function err(e){var m=(e&&e.code==='permission-denied')?'ما عندك صلاحية لهالإجراء.':((e&&e.message)||'جرب مرة ثانية');alert('صار خطأ: '+m);}
+  function showMsg(t){var l=$('list');l.innerHTML='';var d=document.createElement('div');d.className='msg';d.textContent=t;l.appendChild(d);}
+  function btn(t,fn,c){var b=document.createElement('button');b.className=c||'b';b.textContent=t;b.onclick=fn;return b;}
+  function toInt(v){return Math.max(0,parseInt(String(v).replace(/[^0-9]/g,''),10)||0);}
+
+  function drawChips(){
+    var box=$('chips');box.innerHTML='';
+    ['الكل'].concat(CATS).forEach(function(c){
+      var el=btn(c,function(){curCat=(c==='الكل')?'':c;drawChips();render();},'chip'+(((c==='الكل'&&!curCat)||c===curCat)?' on':''));
+      box.appendChild(el);
+    });
+  }
+
+  function render(){
+    var term=norm($('q').value),groups={},total=0;
+    items.forEach(function(it){
+      if(curCat&&it.cat!==curCat)return;
+      if(term&&(norm(it.name)+' '+norm(it.details)).indexOf(term)===-1)return;
+      var k=norm(it.name)+'|'+it.cat;
+      (groups[k]=groups[k]||{name:it.name,cat:it.cat,rows:[]}).rows.push(it);total+=it.qty;
+    });
+    var keys=Object.keys(groups).sort();
+    $('sum').textContent=items.length?'المجموع: '+total+' قطعة':'';
+    var dl=$('nms');dl.innerHTML='';var seen={};
+    items.forEach(function(it){if(!seen[norm(it.name)]){seen[norm(it.name)]=1;var o=document.createElement('option');o.value=it.name;dl.appendChild(o);}});
+    if(!keys.length){showMsg(items.length?'ما لقيت نتيجة':(isDev?'ما اكو سلع بعد، ضيف أول وحدة من تحت':'ما اكو سلع بعد'));return;}
+    $('list').innerHTML='';
+    keys.forEach(function(k){
+      var g=groups[k],sum=0;g.rows.forEach(function(r){sum+=r.qty;});
+      var card=document.createElement('div');card.className='card';
+      var head=document.createElement('div');head.className='head';
+      var n=document.createElement('span');n.textContent=g.name;
+      var c=document.createElement('span');c.className='cat';c.textContent=g.cat;
+      var t=document.createElement('span');t.className='tot';t.textContent=sum+' قطعة';
+      var left=document.createElement('span');left.appendChild(n);left.appendChild(document.createTextNode(' '));left.appendChild(c);
+      head.appendChild(left);head.appendChild(t);card.appendChild(head);
+      g.rows.sort(function(a,b){return a.details<b.details?-1:1;});
+      g.rows.forEach(function(r){
+        var row=document.createElement('div');row.className='row';
+        var tx=document.createElement('div');tx.className='t';tx.textContent=r.details||'—';
+        var pr=btn(money(r.price),function(){
+          var v=prompt('سعر البيع (بالدينار):',r.price||'');if(v===null)return;
+          col.doc(r.id).update({price:toInt(v)}).catch(err);
+        },'pr');
+        var q=document.createElement('span');q.className='q'+(r.qty===0?' z':'');q.textContent=r.qty;
+        var plus=btn('+',function(){col.doc(r.id).update({qty:r.qty+1}).catch(err);},'b p');
+        var minus=btn('−',function(){if(r.qty>0)col.doc(r.id).update({qty:r.qty-1}).catch(err);});
+        [tx,pr,minus,q,plus].forEach(function(e){row.appendChild(e);});
+        if(isDev){
+          row.appendChild(btn('تعديل',function(){
+            var nn=prompt('اسم السلعة:',r.name);if(nn===null)return;
+            var dd=prompt('التفاصيل:',r.details);if(dd===null)return;
+            if(!nn.trim()){alert('الاسم فارغ');return;}
+            col.doc(r.id).update({name:nn.trim(),details:dd.trim()}).catch(err);
+          },'e'));
+          row.appendChild(btn('حذف',function(){if(confirm('تحذف هذا السطر نهائياً؟'))col.doc(r.id).delete().catch(err);},'x'));
+        }
+        card.appendChild(row);
+      });
+      $('list').appendChild(card);
+    });
+  }
+
+  CATS.forEach(function(c){var o=document.createElement('option');o.textContent=c;$('cat').appendChild(o);});
+  $('q').addEventListener('input',render);
+
+  $('addb').onclick=function(){
+    var name=$('nm').value.trim(),cat=$('cat').value,det=$('det').value.trim();
+    var qty=toInt($('qty').value),price=toInt($('prc').value);
+    if(!name){alert('اكتب اسم السلعة');return;}
+    var ex=items.filter(function(i){return norm(i.name)===norm(name)&&i.cat===cat&&norm(i.details)===norm(det);})[0];
+    var p;
+    if(ex){var u={qty:ex.qty+qty};if(price)u.price=price;p=col.doc(ex.id).update(u);}
+    else p=col.add({name:name,cat:cat,details:det,qty:qty,price:price});
+    p.then(function(){$('det').value='';$('qty').value=1;$('prc').value='';}).catch(err);
+  };
+
+  $('lgb').onclick=function(){
+    $('lgm').textContent='';
+    auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value).catch(function(){$('lgm').textContent='الإيميل أو كلمة السر غلط.';});
+  };
+  $('pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('lgb').click();});
+  $('outb').onclick=function(){auth.signOut();};
+
+  auth.onAuthStateChanged(function(u){
+    if(unsub){unsub();unsub=null;}
+    items=[];
+    if(!u){$('app').classList.add('hide');$('login').classList.remove('hide');return;}
+    isDev=norm(u.email)===norm(window.DEV_EMAIL);
+    $('who').textContent=isDev?'حساب المطور':'حساب البائع';
+    $('addc').classList.toggle('hide',!isDev);
+    $('login').classList.add('hide');$('app').classList.remove('hide');
+    drawChips();
+    unsub=col.onSnapshot(function(s){
+      items=s.docs.map(function(d){var v=d.data()||{};return {id:d.id,name:String(v.name||''),cat:String(v.cat||'أخرى'),details:String(v.details||''),qty:Math.max(0,Number(v.qty)||0),price:Math.max(0,Number(v.price)||0)};});
+      render();
+    },function(e){showMsg((e&&e.code==='permission-denied')?'هذا الحساب ما عنده صلاحية. تأكد من الإيميل وقواعد Firestore.':'تعذر التحميل. تأكد من الإنترنت.');});
+  });
+})();
+</script>
+</body>
+</html>
